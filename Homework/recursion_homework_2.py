@@ -6,10 +6,10 @@ for number in numbers:
 print(f"You entered {input_arr}")
 
 def add_numbers(adding_input):
-    if adding_input == 1:
+    if len(adding_input) == 0:
         return 0
     else:
-        return adding_input [0] + add_numbers(adding)
+        return adding_input [0] + add_numbers(adding_input[1:])
 
 result = add_numbers(input_arr)
 print(result)
