@@ -20,5 +20,8 @@ def most_common(lst):
 
 mostCommonLetter = most_common(input_arr)
 
-for i in input_arr:
+for i in range(len(input_arr)):
     if i == mostCommonLetter:
+        input_arr[i] = input_arr[i.upper]
+
+print(input_arr)
