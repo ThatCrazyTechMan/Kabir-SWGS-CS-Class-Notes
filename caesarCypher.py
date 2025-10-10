@@ -9,6 +9,8 @@ print(f"You entered {input_arr}")
 
 shift_num = int(input("Enter a shift number: "))
 
+
+
 def rightRotateByOne(arr, shift):
     for i in range(shift):
         temp = arr[0]
