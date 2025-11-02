@@ -12,7 +12,7 @@ print(arr)
 
 
 def isConsecutive(num1, num2):
-    if num2 - num1 == 1:
+    if abs(num2 - num1) == 1:
         return True
     else:
         return False

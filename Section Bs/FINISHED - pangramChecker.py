@@ -1,7 +1,7 @@
 import string
 
 input_arr = []
-user_input = (input("Enter a sentence: "))
+user_input = (input("Enter a sentence: ")).lower()
 for entry in user_input:
     input_arr.append(str(entry))
 # Change the "int()" to a "str()" if you want to append text

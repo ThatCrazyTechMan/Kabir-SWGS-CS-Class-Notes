@@ -41,10 +41,6 @@ class Dragon:
     def getRandomCritChance(self):
         return self.randomCritChance
 
-    def fight(self):
-
-
-
 class Action:
     def getCommand(self):
         pass
@@ -71,6 +67,8 @@ class Eat(Action):
         if pet.hunger < 0.5:
             pet.happiness += 0.25
             return 'Your pet is satisfied!'
+        elif pet.hunger == 1:
+            print('Your pet died')
 
         pet.happiness -= 0.1
         return 'Your pet is still hungry!'
@@ -110,7 +108,6 @@ class fightADragon(Action):
         number = random.randint(0,3)
         opponentDragon = Dragon(dragons[0][number], dragons[1][number], dragons[2][number])
         choice = input('Do you want to (f)ight or (s)hield?')
-        if choice == 'f':
 
 
 
