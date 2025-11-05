@@ -1,11 +1,12 @@
 import random
 
 class Citigotchi:
-    def __init__(self, name, species, happiness, hunger):
+    def __init__(self, name, species, happiness, hunger, catchphrase):
         self.name = name
         self.species = species
         self.happiness = happiness
         self.hunger = hunger
+        self.catchphrase = catchphrase
 
     # Getters
     def getName(self):
@@ -16,6 +17,8 @@ class Citigotchi:
         return self.happiness
     def getHunger(self):
         return self.hunger
+    def getCatchphrase(self):
+        return self.catchphrase
 
     # Setters
     def setName(self, newName):
@@ -40,6 +43,9 @@ class Dragon:
         return self.dragonHealth
     def getRandomCritChance(self):
         return self.randomCritChance
+    def damageDragon(self, damage):
+        self.dragonHealth -= damage
+
 
 class Action:
     def getCommand(self):
@@ -93,21 +99,37 @@ class Exercise(Action):
         pet.happiness -= 0.25;
         return 'Your pet is exhausted and hungry!'
 
-class fightADragon(Action):
+#class fightADragon(Action):
+#    @staticmethod
+#    def getCommand():
+#        return 'FIGHTADRAGON'
+#
+#    @staticmethod
+#    def getMenuMessage():
+#        return 'fight a dragon!!.'
+#
+#    @staticmethod
+#    def doAction(pet):
+#        dragons = [['firebreather', 'icebreather', 'asthmatic', 'arthritic'],[100,75,50,25],[0.20, 0.4,0.55,0.75]]
+#        number = random.randint(0,3)
+#        opponentDragon = Dragon(dragons[0][number], dragons[1][number], dragons[2][number])
+#        choice = input('Do you want to (f)ight or (s)hield?')
+#        if choice == 'f':
+#            opponentDragon.damageDragon(10)
+
+
+class speak(Action):
     @staticmethod
     def getCommand():
-        return 'FIGHTADRAGON'
+        return 'SPEAK'
 
     @staticmethod
     def getMenuMessage():
-        return 'fight a dragon!!.'
+        return 'Make your pet speak'
 
     @staticmethod
     def doAction(pet):
-        dragons = [['firebreather', 'icebreather', 'asthmatic', 'arthritic'],[100,75,50,25],[0.20, 0.4,0.55,0.75]]
-        number = random.randint(0,3)
-        opponentDragon = Dragon(dragons[0][number], dragons[1][number], dragons[2][number])
-        choice = input('Do you want to (f)ight or (s)hield?')
+        print(Pet.getCatchphrase)
 
 
 
@@ -117,10 +139,11 @@ class fightADragon(Action):
 def main():
     petName = input('What is the name of your pet? ')
     speciesList = ['Dolphin', 'Monkey', 'Penguin', 'Shark', 'Octopus', 'Squid', 'Mouse', 'Blobfish', 'Snake', 'Vietnamese Mossy Frog']
+    speciesCatchphrase = ['Screech', '']
 
     species = random.choice(speciesList)
 
-    pet = Citigotchi(petName, species, '100', '10')
+    pet = Citigotchi(petName, species, '100', '10', '')
 
     actions = []
     actions.append(Eat())
