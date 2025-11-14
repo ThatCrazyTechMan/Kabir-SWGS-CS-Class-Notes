@@ -26,25 +26,30 @@ class Citigotchi:
     def changeSpecies(self, newSpecies):
         self.species = newSpecies
     def changeHunger(self, newHunger):
-        self.hunger = newHunger
+        self.hunger -= newHunger
     def changeHappiness(self, newHappiness):
-        self.happiness = newHappiness
+        self.happiness += newHappiness
+    def setHunger(self, newHunger):
+        self.hunger = newHunger
 
 
-class Dragon:
-    def __init__(self, dragonSpecies, dragonHealth, randomCritChance):
-        self.dragonSpecies = dragonSpecies
-        self.dragonHealth = dragonHealth
-        self.randomCritChance = randomCritChance
+class Dolphin(Citigotchi):
+    def __init__ (self, name, happiness, hunger, catchphrase):
+        super().__init__(name, "Dolphin")
 
-    def getDragonSpecies(self):
-        return self.dragonSpecies
-    def getDragonHealth(self):
-        return self.dragonHealth
-    def getRandomCritChance(self):
-        return self.randomCritChance
-    def damageDragon(self, damage):
-        self.dragonHealth -= damage
+class CitiMech(Citigotchi):
+    def __init__(self, name, species, happiness, hunger, catchphrase, ability):
+        super().__init__(self, name, species, happiness, catchphrase)
+        self.hunger = hunger
+        self.ability = ability
+
+    def getEnergy(self):
+        return self.power
+    def getAbility(self):
+        return self.ability
+    def decreaseHunger(self, subtractor):
+        pet.setHunger(subtractor)
+
 
 
 class Action:
@@ -69,12 +74,11 @@ class Eat(Action):
 
     @staticmethod
     def doAction(pet):
-        pet.hunger -= 0.25
-        if pet.hunger < 0.5:
-            pet.happiness += 0.25
+        pet.changeHunger(0.25)
+        print(pet.getHunger())
+        if pet.getHunger() < 0.5:
             return 'Your pet is satisfied!'
-        elif pet.hunger == 1:
-            print('Your pet died')
+
 
         pet.happiness -= 0.1
         return 'Your pet is still hungry!'
@@ -91,13 +95,13 @@ class Exercise(Action):
 
     @staticmethod
     def doAction(pet):
-        pet.hunger += 0.4;
-        if pet.hunger < 0.5:
-            pet.happiness += 0.2
-            return 'Your pet had a good workout!.'
+        pet.changeHunger(-0.25)
+        if pet.getHunger() < 0.5:
+            pet.changeHappiness(0.2);
+            return 'Your pet had a good workout!.' + str(pet.getHunger()) + str(pet.getHappiness())
 
-        pet.happiness -= 0.25;
-        return 'Your pet is exhausted and hungry!'
+        pet.changeHappiness(-0.25);
+        return 'Your pet is exhausted and hungry!' + str(pet.getHunger()) + str(pet.getHappiness())
 
 #class fightADragon(Action):
 #    @staticmethod
@@ -129,25 +133,66 @@ class speak(Action):
 
     @staticmethod
     def doAction(pet):
-        print(Pet.getCatchphrase)
+        return pet.getCatchphrase()
 
 
+class getANewPet(Action):
+    @staticmethod
+    def getCommand():
+        return 'NEW PET'
+    @staticmethod
+    def getMenuMessage():
+        return 'Get a new pet.'
+    @staticmethod
+    def doAction(pet):
+        main()
 
+class mechanise(Action):
+    @staticmethod
+    def getCommand():
+        return 'MECHANISE'
+    @staticmethod
+    def getMenuMessage():
+        return 'Mechanise your pet.'
+    @staticmethod
+    def doAction(pet):
+        return 'Mechanising underway'
 
-
+class mechPower(Action):
+    @staticmethod
+    def getCommand():
+        return 'MECH POWER'
+    @staticmethod
+    def getMenuMessage():
+        return 'Use your Mech power'
+    @staticmethod
+    def doAction(pet):
+        if type(pet) == CitiMech:
+            pet.decreaseHunger(0.1)
+            return pet.mechPower()
+        else:
+            return 'You have not mechanised your pet yet! You cannot use a Mech power'
 
 def main():
     petName = input('What is the name of your pet? ')
-    speciesList = ['Dolphin', 'Monkey', 'Penguin', 'Shark', 'Octopus', 'Squid', 'Mouse', 'Blobfish', 'Snake', 'Vietnamese Mossy Frog']
-    speciesCatchphrase = ['Screech', '']
+    speciesList = [['Dolphin', 'Monkey', 'Penguin', 'Shark', 'Octopus', 'Squid', 'Mouse', 'Blobfish', 'Snake', 'Vietnamese Mossy Frog'],['Screech', 'Ooh ooh aah aah', 'Squawk', 'Splish splash', 'Gurgle', 'Splosh', 'Squeak', 'Splat', 'Hisssssss', 'Ribbit'],['TurboSplash','SuperSwing', 'HyperHuddle', 'MegaBite','DeltaDazzle', 'InfititeInk', 'Infiltrate', 'DeepDive', 'CyberStrangle','KiloCloak']]
 
-    species = random.choice(speciesList)
 
-    pet = Citigotchi(petName, species, '100', '10', '')
+    species = random.choice(speciesList[0])
+    index = speciesList[0].index(species)
+    speciesCatchphrase = speciesList[1][index]
+    MechPower = speciesList[2][index]
+
+
+    pet = Citigotchi(petName, species, 1, 0.1, speciesCatchphrase)
 
     actions = []
     actions.append(Eat())
     actions.append(Exercise())
+    actions.append(getANewPet())
+    actions.append(speak())
+    actions.append(mechanise())
+    actions.append(mechPower())
 
     print('########################\n')
     print(f'Welcome to Citigotchi! Your pet is {pet.getName()} the {pet.getSpecies()}')
@@ -165,10 +210,15 @@ def main():
         didAction = False
         for action in actions:
             if choice == action.getCommand():
-                print(action.doAction(pet) + '\n')
+                result = action.doAction(pet)
+                if result == 'Mechanising underway':
+                    pet = CitiMech(pet.getName, pet.getSpecies, pet.getHappiness, pet.getHunger, speciesCatchphrase, MechPower)
+                print(result + '\n')
                 didAction = True
                 break
-
+        if pet.getHunger() == 1 or pet.getHappiness() == 0:
+            print('Your pet is dead!!')
+            quit()
         if not didAction and choice != 'QUIT':
             print('Invalid action. Try again.\n')
 
