@@ -1,4 +1,5 @@
 import random
+import termcolor
 
 class Citigotchi:
     def __init__(self, name, species, happiness, hunger, catchphrase):
@@ -39,16 +40,16 @@ class Dolphin(Citigotchi):
 
 class CitiMech(Citigotchi):
     def __init__(self, name, species, happiness, hunger, catchphrase, ability):
-        super().__init__(self, name, species, happiness, catchphrase)
+        super().__init__(name, species, happiness, hunger, catchphrase)
         self.hunger = hunger
         self.ability = ability
 
-    def getEnergy(self):
-        return self.power
     def getAbility(self):
         return self.ability
     def decreaseHunger(self, subtractor):
-        pet.setHunger(subtractor)
+        self.hunger += subtractor
+    def mechPower(self):
+        return f'{self.getName()} uses {self.ability}'
 
 
 
@@ -75,12 +76,11 @@ class Eat(Action):
     @staticmethod
     def doAction(pet):
         pet.changeHunger(0.25)
-        print(pet.getHunger())
         if pet.getHunger() < 0.5:
             return 'Your pet is satisfied!'
 
 
-        pet.happiness -= 0.1
+        pet.changeHappiness(-0.1)
         return 'Your pet is still hungry!'
 
 
@@ -98,10 +98,10 @@ class Exercise(Action):
         pet.changeHunger(-0.25)
         if pet.getHunger() < 0.5:
             pet.changeHappiness(0.2);
-            return 'Your pet had a good workout!.' + str(pet.getHunger()) + str(pet.getHappiness())
+            return 'Your pet had a good workout!'
 
-        pet.changeHappiness(-0.25);
-        return 'Your pet is exhausted and hungry!' + str(pet.getHunger()) + str(pet.getHappiness())
+        pet.changeHappiness(-0.25)
+        return 'Your pet is exhausted and hungry!'
 
 #class fightADragon(Action):
 #    @staticmethod
@@ -133,7 +133,7 @@ class speak(Action):
 
     @staticmethod
     def doAction(pet):
-        return pet.getCatchphrase()
+        return termcolor.colored(pet.getCatchphrase(), 'red')
 
 
 class getANewPet(Action):
@@ -145,7 +145,18 @@ class getANewPet(Action):
         return 'Get a new pet.'
     @staticmethod
     def doAction(pet):
-        main()
+       return 'Saving your pet!'
+
+class releasePet(Action):
+    @staticmethod
+    def getCommand():
+        return 'RELEASE'
+    @staticmethod
+    def getMenuMessage():
+        return 'Release your pet.'
+    @staticmethod
+    def doAction(pet):
+        return 'Releasing your pet!'
 
 class mechanise(Action):
     @staticmethod
@@ -185,7 +196,7 @@ def main():
 
 
     pet = Citigotchi(petName, species, 1, 0.1, speciesCatchphrase)
-
+    available_pets = [pet]
     actions = []
     actions.append(Eat())
     actions.append(Exercise())
@@ -193,6 +204,7 @@ def main():
     actions.append(speak())
     actions.append(mechanise())
     actions.append(mechPower())
+    actions.append(releasePet())
 
     print('########################\n')
     print(f'Welcome to Citigotchi! Your pet is {pet.getName()} the {pet.getSpecies()}')
@@ -200,25 +212,61 @@ def main():
     choice = ''
 
     while choice != 'QUIT':
-
-        print('Enter one of the following commands:\n')
+        print(f'\n{pet.getName()} the {pet.getSpecies()} - Hunger: {pet.getHunger()}, Happiness: {pet.getHappiness()}\n')
+        print(termcolor.colored('Enter one of the following commands:\n', 'yellow'))
         for action in actions:
             print('{} --- {}'.format(action.getCommand(), action.getMenuMessage()))
         print('QUIT --- Quit the game.')
-
         choice = input(">> ").upper()
         didAction = False
         for action in actions:
             if choice == action.getCommand():
                 result = action.doAction(pet)
                 if result == 'Mechanising underway':
-                    pet = CitiMech(pet.getName, pet.getSpecies, pet.getHappiness, pet.getHunger, speciesCatchphrase, MechPower)
-                print(result + '\n')
+                    pet = CitiMech(pet.getName(), pet.getSpecies(), pet.getHappiness(), pet.getHunger(), speciesCatchphrase, MechPower)
+                elif result == 'Saving your pet!':
+                    new_or_old_pet = input('Do you want a (n)ew pet, or to switch to an (e)xisting one: ')
+                    if new_or_old_pet == 'e':
+                        if pet not in available_pets:
+                            available_pets.append(pet)
+                            print(f'{pet.getName()} saved')
+
+                        print('Your saved pets:\n')
+                        for i, pet_string in enumerate(available_pets):
+                            mech_status = " (MECH)" if type(pet) == CitiMech else ""
+                            print(f'{i+1}: {pet_string.getName()} the {pet_string.getSpecies()} {mech_status}')
+                        choice = input("\n>> ")
+                        try:
+                            pet_index = int(choice) - 1
+                            if 0 <= pet_index < len(available_pets):
+                                pet = available_pets[pet_index]
+                                print(f'switched to {pet.getName()}!')
+                            else:
+                                print('Invalid choice!')
+                        except ValueError:
+                            print('Invalid input!')
+                    else:
+                        petName = input('What is the name of your new pet? ')
+                        species = random.choice(speciesList[0])
+                        index = speciesList[0].index(species)
+                        speciesCatchphrase = speciesList[1][index]
+                        MechPower = speciesList[2][index]
+
+                        pet = Citigotchi(petName, species, 1, 0.1, speciesCatchphrase)
+                        available_pets.append(pet)
+
+                elif result == 'Releasing your pet!':
+                    available_pets.remove(pet)
+                    pet = random.choice(available_pets)
+
+
+                print(f'{result}\n')
                 didAction = True
                 break
-        if pet.getHunger() == 1 or pet.getHappiness() == 0:
+        if pet.getHunger() <= 0 or pet.getHunger() >= 2 or pet.getHappiness() <= 0:
             print('Your pet is dead!!')
             quit()
+            return
         if not didAction and choice != 'QUIT':
             print('Invalid action. Try again.\n')
 
