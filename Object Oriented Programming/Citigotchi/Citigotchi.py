@@ -36,7 +36,7 @@ class Citigotchi:
 
 class Dolphin(Citigotchi):
     def __init__ (self, name, happiness, hunger, catchphrase):
-        super().__init__(name, "Dolphin")
+        super().__init__(name, "Dolphin", "1", "0.1", "EE EE EE EE")
 
 class CitiMech(Citigotchi):
     def __init__(self, name, species, happiness, hunger, catchphrase, ability):
