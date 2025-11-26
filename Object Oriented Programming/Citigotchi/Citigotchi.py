@@ -103,24 +103,6 @@ class Exercise(Action):
         pet.changeHappiness(-0.25)
         return 'Your pet is exhausted and hungry!'
 
-#class fightADragon(Action):
-#    @staticmethod
-#    def getCommand():
-#        return 'FIGHTADRAGON'
-#
-#    @staticmethod
-#    def getMenuMessage():
-#        return 'fight a dragon!!.'
-#
-#    @staticmethod
-#    def doAction(pet):
-#        dragons = [['firebreather', 'icebreather', 'asthmatic', 'arthritic'],[100,75,50,25],[0.20, 0.4,0.55,0.75]]
-#        number = random.randint(0,3)
-#        opponentDragon = Dragon(dragons[0][number], dragons[1][number], dragons[2][number])
-#        choice = input('Do you want to (f)ight or (s)hield?')
-#        if choice == 'f':
-#            opponentDragon.damageDragon(10)
-
 
 class speak(Action):
     @staticmethod
