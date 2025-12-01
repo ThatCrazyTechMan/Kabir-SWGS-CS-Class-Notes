@@ -43,3 +43,16 @@ class LinkedList:
         last_node.setNext(new_node)
         last_node = self.getLast()
         last_node.setNext(None)
+
+    def delete_at_begin(self):
+        current_node = self.getHead()
+        next_node = current_node.getNext()
+        if current_node is None:
+            return
+        else:
+            self.setHead(next_node)
+            current_node = None
+
+
+
+
