@@ -36,7 +36,7 @@ class LinkedList:
 
     def insert_at_begin(self, new_data):
         new_node = Node(new_data)
-        if self.getHead is None:
+        if self.getHead() is None:
             self.setHead(new_node)
             return
         else:

@@ -11,12 +11,16 @@ import math
 def Main():
     NumbersAllowed = []
     Targets = []
+    LargeNumbers = [25, 50, 75, 100]
+
     MaxNumberOfTargets = 20
     MaxTarget = 0
     MaxNumber = 0
     TrainingGame = False
     Choice = input("Enter y to play the training game, anything else to play a random game: ").lower()
-    print()
+    #difficulty_input = input("Enter a difficulty, (e)asy, (m)edium or (h)ard: ").lower()
+    #if difficulty_input == "e":
+    #    print()
     if Choice == "y":
         MaxNumber = 1000
         MaxTarget = 1000
@@ -33,32 +37,40 @@ def Main():
 
 def PlayGame(Targets, NumbersAllowed, TrainingGame, MaxTarget, MaxNumber):
     Score = 0
+    isChallenge = False
+    if random.randint(0, 4) == 4:
+        isChallenge = True
+        print("You're playing a Challenge Game!!")
     GameOver = False
     gameQuitted = False
-    while not GameOver:
-        DisplayState(Targets, NumbersAllowed, Score)
-        UserInput = input("Enter an expression: ")
-        print()
-        if UserInput == "quit":
-            gameQuitted = True
-        if CheckIfUserInputValid(UserInput):
-            UserInputInRPN = ConvertToRPN(UserInput)
-            if CheckNumbersUsedAreAllInNumbersAllowed(NumbersAllowed, UserInputInRPN, MaxNumber):
-                IsTarget, Score = CheckIfUserInputEvaluationIsATarget(Targets, UserInputInRPN, Score)
-                if IsTarget:
-                    NumbersAllowed = RemoveNumbersUsed(UserInput, MaxNumber, NumbersAllowed)
-                    NumbersAllowed = FillNumbers(NumbersAllowed, TrainingGame, MaxNumber)
-        if not gameQuitted:
-            Score -= 1
-        if Targets[0] != -1:
-            GameOver = True
-        else:
-            Targets = UpdateTargets(Targets, TrainingGame, MaxTarget)
+    while not GameOver or not gameQuitted:
+        while not gameQuitted:
+            DisplayState(Targets, NumbersAllowed, Score)
+            UserInput = input("Enter an expression, or 'quit' to exit game: ")
+            print()
+            if UserInput == "quit":
+                gameQuitted = True
+                quit()
+            elif CheckIfUserInputValid(UserInput):
+                UserInputInRPN = ConvertToRPN(UserInput)
+                if CheckNumbersUsedAreAllInNumbersAllowed(NumbersAllowed, UserInputInRPN, MaxNumber):
+                    IsTarget, Score = CheckIfUserInputEvaluationIsATarget(Targets, UserInputInRPN, Score, isChallenge, NumbersAllowed)
+                    if IsTarget:
+                        NumbersAllowed = RemoveNumbersUsed(UserInput, MaxNumber, NumbersAllowed)
+                        NumbersAllowed = FillNumbers(NumbersAllowed, TrainingGame, MaxNumber)
+                    else:
+                        print("Invalid input")
+            if not gameQuitted:
+                Score -= 1
+            if Targets[0] != -1:
+                GameOver = True
+            else:
+                Targets = UpdateTargets(Targets, TrainingGame, MaxTarget)
     print("Game over!")
     DisplayScore(Score)
 
 
-def CheckIfUserInputEvaluationIsATarget(Targets, UserInputInRPN, Score):
+def CheckIfUserInputEvaluationIsATarget(Targets, UserInputInRPN, Score, isChallenge, NumbersAllowed):
     UserInputEvaluation = EvaluateRPN(UserInputInRPN)
     UserInputEvaluationIsATarget = False
     if UserInputEvaluation != -1:
@@ -67,6 +79,10 @@ def CheckIfUserInputEvaluationIsATarget(Targets, UserInputInRPN, Score):
                 Score += 2
                 Targets[Count] = -1
                 UserInputEvaluationIsATarget = True
+    if isChallenge:
+        if UserInputEvaluationIsATarget and UserInput in NumbersAllowed :
+            Score += 10
+
     return UserInputEvaluationIsATarget, Score
 
 
@@ -99,6 +115,7 @@ def CheckNumbersUsedAreAllInNumbersAllowed(NumbersAllowed, UserInputInRPN, MaxNu
             if int(Item) in Temp:
                 Temp.remove(int(Item))
             else:
+                print('Numbers inputted are not allowed')
                 return False
     return True
 
@@ -215,10 +232,14 @@ def GetNumberFromUserInput(UserInput, Position):
 
 
 def CheckIfUserInputValid(UserInput):
+    if re.search("^/\0+$", UserInput) is not None:
+        print('Zero division is not allowed!')
+        return False
     if re.search("^([0-9]+[\\+\\-\\*\\/])+[0-9]+$", UserInput) is not None:
         #What this does is "start, then have any number that is 0-9 1 or more times, followed by either a plus or a minus or a multiply or a divide one or more times, then a number 0-9, then it finishes"
         return True
     else:
+        print('This is not a valid RPN expression!')
         return False
 
 
