@@ -1,247 +1,256 @@
-# Skeleton Program code for the AQA A Level Paper 1 Summer 2025 examination
-# this code should be used in conjunction with the Preliminary Material
-# written by the AQA Programmer Team
-# developed in the Python 3.9 programming environment
+#Skeleton Program code for the AQA A Level Paper 1 Summer 2027 examination
+#this code should be used in conjunction with the Preliminary Material
+#written by the AQA Programmer Team
+#developed in the Python 3.9 programming environment
 
-import re
-import random
 import math
 
-
 def Main():
-    NumbersAllowed = []
-    Targets = []
-    MaxNumberOfTargets = 20
-    MaxTarget = 0
-    MaxNumber = 0
-    TrainingGame = False
-    Choice = input("Enter y to play the training game, anything else to play a random game: ").lower()
-    print()
-    if Choice == "y":
-        MaxNumber = 1000
-        MaxTarget = 1000
-        TrainingGame = True
-        Targets = [-1, -1, -1, -1, -1, 23, 9, 140, 82, 121, 34, 45, 68, 75, 34, 23, 119, 43, 23, 119]
-    else:
-        MaxNumber = 10
-        MaxTarget = 50
-        Targets = CreateTargets(MaxNumberOfTargets, MaxTarget)
-    NumbersAllowed = FillNumbers(NumbersAllowed, TrainingGame, MaxNumber)
-    PlayGame(Targets, NumbersAllowed, TrainingGame, MaxTarget, MaxNumber)
+    Board = []
+    Players = []
+    Discard = []
+    TurnsSinceMatch = 0
+    WhoseTurn = 0
+    MaxScore = 10
+    FILE_EXTENSION = ".txt"
+    FileName = input("Enter filename to load or just press Enter to play the default game: ") + FILE_EXTENSION
+    UseDataFromFile = False
+    if FileName != FILE_EXTENSION:
+        UseDataFromFile, Board, Players, Discard, MaxScore, WhoseTurn, TurnsSinceMatch = LoadGame(FileName)
+        if UseDataFromFile == False:
+            print("Setting up default game")
+    if UseDataFromFile == False:
+        Players.append(Player("Player 1", 0))
+        Players.append(Player("Player 2", 0))
+        for Count in range(1, 37):
+            P = Pile(3, 0)
+            P.Add(Tile("A", 1))
+            P.Add(Tile("B", 2))
+            P.Add(Tile("A", 1))
+            Board.append(P)
+    ThisGame = Game(Board, Players, Discard, WhoseTurn, MaxScore, TurnsSinceMatch)
+    ThisGame.PlayGame()
     input()
 
+def LoadGame(FileName):
+    Board = []
+    Players = []
+    Discard = []
+    MaxScore = 0
+    WhoseTurn = 0
+    TurnsSinceMatch = 0
+    try:
+        with open(FileName) as File:
+            LineFromFile = File.readline()
+            BoardSize = int(LineFromFile)
+            for i in range(1, BoardSize + 1):
+                LineFromFile = File.readline()
+                Items = LineFromFile.split(",")
+                PileSize = len(Items) // 2
+                P = Pile(PileSize, int(Items[0]))
+                for TileNo in range(len(Items) - 2, -1, -2):
+                    P.Add(Tile(Items[TileNo], int(Items[TileNo + 1])))
+                Board.append(P)
+            LineFromFile = File.readline()
+            NoOfPlayers = int(LineFromFile)
+            for i in range (1, NoOfPlayers + 1):
+                LineFromFile = File.readline()
+                Items = LineFromFile.split(",")
+                Players.append(Player(Items[0], int(Items[1])))
+            LineFromFile = File.readline()
+            Items = LineFromFile.split(",")
+            for i in range(0, len(Items) - 1, 2):
+                Discard.append(Tile(Items[i], int(Items[i + 1])))
+            LineFromFile = File.readline()
+            MaxScore = int(LineFromFile)
+            LineFromFile = File.readline()
+            WhoseTurn = int(LineFromFile)
+            LineFromFile = File.readline()
+            TurnsSinceMatch = int(LineFromFile)
+    except:
+        print("File not loaded")
+        return False, Board, Players, Discard, MaxScore, WhoseTurn, TurnsSinceMatch
+    return True, Board, Players, Discard, MaxScore, WhoseTurn, TurnsSinceMatch
 
-def PlayGame(Targets, NumbersAllowed, TrainingGame, MaxTarget, MaxNumber):
-    Score = 0
-    GameOver = False
-    while not GameOver:
-        DisplayState(Targets, NumbersAllowed, Score)
-        UserInput = input("Enter an expression: ")
-        print()
-        if CheckIfUserInputValid(UserInput):
-            UserInputInRPN = ConvertToRPN(UserInput)
-            if CheckNumbersUsedAreAllInNumbersAllowed(NumbersAllowed, UserInputInRPN, MaxNumber):
-                IsTarget, Score = CheckIfUserInputEvaluationIsATarget(Targets, UserInputInRPN, Score)
-                if IsTarget:
-                    NumbersAllowed = RemoveNumbersUsed(UserInput, MaxNumber, NumbersAllowed)
-                    NumbersAllowed = FillNumbers(NumbersAllowed, TrainingGame, MaxNumber)
-        Score -= 1
-        if Targets[0] != -1:
-            GameOver = True
-        else:
-            Targets = UpdateTargets(Targets, TrainingGame, MaxTarget)
-    print("Game over!")
-    DisplayScore(Score)
+class Game():
+    def __init__(self, B, P, D, WT, MS, TSM):
+        self.__Board = B
+        self.__Players = P
+        self.__Discard = D
+        self.__WhoseTurn = WT
+        self.__MaxScore = MS
+        self.__TurnsSinceMatch = TSM
+        self.__GameOver = False
+        self.__GridSize = int(math.sqrt(len(self.__Board)))
 
-
-def CheckIfUserInputEvaluationIsATarget(Targets, UserInputInRPN, Score):
-    UserInputEvaluation = EvaluateRPN(UserInputInRPN)
-    UserInputEvaluationIsATarget = False
-    if UserInputEvaluation != -1:
-        for Count in range(0, len(Targets)):
-            if Targets[Count] == UserInputEvaluation:
-                Score += 2
-                Targets[Count] = -1
-                UserInputEvaluationIsATarget = True
-    return UserInputEvaluationIsATarget, Score
-
-
-def RemoveNumbersUsed(UserInput, MaxNumber, NumbersAllowed):
-    UserInputInRPN = ConvertToRPN(UserInput)
-    for Item in UserInputInRPN:
-        if CheckValidNumber(Item, MaxNumber):
-            if int(Item) in NumbersAllowed:
-                NumbersAllowed.remove(int(Item))
-    return NumbersAllowed
-
-
-def UpdateTargets(Targets, TrainingGame, MaxTarget):
-    for Count in range(0, len(Targets) - 1):
-        Targets[Count] = Targets[Count + 1]
-    Targets.pop()
-    if TrainingGame:
-        Targets.append(Targets[-1])
-    else:
-        Targets.append(GetTarget(MaxTarget))
-    return Targets
-
-
-def CheckNumbersUsedAreAllInNumbersAllowed(NumbersAllowed, UserInputInRPN, MaxNumber):
-    Temp = []
-    for Item in NumbersAllowed:
-        Temp.append(Item)
-    for Item in UserInputInRPN:
-        if CheckValidNumber(Item, MaxNumber):
-            if int(Item) in Temp:
-                Temp.remove(int(Item))
+    def PlayGame(self):
+        while self.__GameOver == False:
+            Choice = ""
+            while Choice != "T":
+                self.__DisplayMenu()
+                Choice = self.__GetChoice()
+                if Choice == "B":
+                    self.__DisplayBoard()
+                elif Choice == "D":
+                    self.__DisplayDiscard()
+                elif Choice == "S":
+                    self.__DisplayScores()
+            Pile1 = self.__ChoosePile()
+            Pile2 = self.__ChoosePile()
+            while Pile1 == Pile2:
+                Pile2 = self.__ChoosePile()
+            self.__TurnsSinceMatch += 1
+            if self.__Board[Pile1].Empty() == False and self.__Board[Pile2].Empty() == False:
+                if self.__Board[Pile1].GetSymbolOfTopTile() == self.__Board[Pile2].GetSymbolOfTopTile():
+                    self.__TurnsSinceMatch = 0
+                    Tile1 = self.__Board[Pile1].Remove()
+                    Tile2 = self.__Board[Pile2].Remove()
+                    self.__Discard.append(Tile1)
+                    self.__Discard.append(Tile2)
+                    ScoreIncrease = 0
+                    ScoreIncrease += Tile1.GetPoints() + Tile2.GetPoints()
+                    self.__Players[self.__WhoseTurn].ChangeScore(ScoreIncrease)
+                    print(f"{self.__Players[self.__WhoseTurn].GetName()}, you had two matching {Tile1.GetSymbol()} tiles; your score has increased by {ScoreIncrease}")
+                else:
+                    print("You did not find a matching pair.")
+                    print(f"The first pile you chose had a {self.__Board[Pile1].GetSymbolOfTopTile()}")
+                    print(f"The second pile you chose had a {self.__Board[Pile2].GetSymbolOfTopTile()}")
             else:
+                print("You chose an empty pile")
+            print()
+            self.__UpdateWhoseTurn()
+            self.__GameOver = self.__MaxScoreReached() or self.__NoMoreTilesLeft()
+        if self.__Players[0].GetScore() > self.__Players[1].GetScore():
+            print(f"{self.__Players[0].GetName()} has won!")
+        elif self.__Players[1].GetScore() > self.__Players[0].GetScore():
+            print(f"{self.__Players[1].GetName()} has won!")
+
+    def __DisplayScores(self):
+        print()
+        for P in self.__Players:
+            print(f"{P.GetName()}: has a score of {P.GetScore()}")
+        print()
+
+    def __DisplayMenu(self):
+        print()
+        print()
+        print("MENU")
+        print("B. Display the board")
+        print("D. Display the discard")
+        print("T. Take turn")
+        print("S. Display scores")
+        print()
+
+    def __GetChoice(self):
+        Choice = input(f"{self.__Players[self.__WhoseTurn].GetName()}, enter your choice: ")
+        return Choice
+
+    def __DisplayBoard(self):
+        for y in range (self.__GridSize, 0, -1):
+            print(f"{y}|", end="")
+            for x in range(1, self.__GridSize + 1):
+                print(self.__Board[self.__GetIndex(x, y)].GetNumberOfTiles(), end="")
+            print()
+        print("  ", end="")
+        for x in range(1, self.__GridSize + 1):
+            print("-", end="")
+        print()
+        print("  ", end="")
+        for x in range (1, self.__GridSize + 1):
+            print(x, end="")
+        print()
+
+    def __DisplayDiscard(self):
+        print()
+        print()
+        print("Discard: ", end="")
+        if len(self.__Discard) == 0:
+            print("Empty")
+        else:
+            print(self.__Discard[0].GetSymbol(), end="")
+            Count = 1
+            while Count < len(self.__Discard):
+                print(f", {self.__Discard[Count].GetSymbol()}", end="")
+                Count += 1
+        print()
+        print()
+
+    def __ChoosePile(self):
+        x = 0
+        y = 0
+        x = int(input("Enter x coordinate: "))
+        y = int(input("Enter y coordinate: "))
+        return self.__GetIndex(x, y)
+
+    def __GetIndex(self, x, y):
+        return x - 1 + ((y - 1) * self.__GridSize)
+
+    def __UpdateWhoseTurn(self):
+        self.__WhoseTurn = (self.__WhoseTurn + 1) % len(self.__Players)
+
+    def __NoMoreTilesLeft(self):
+        for P in self.__Board:
+            if P.Empty() == False:
                 return False
-    return True
-
-
-def CheckValidNumber(Item, MaxNumber):
-    if re.search("^[0-9]+$", Item) is not None:
-        ItemAsInteger = int(Item)
-        if ItemAsInteger > 0 and ItemAsInteger <= MaxNumber:
-            return True
-    return False
-
-
-def DisplayState(Targets, NumbersAllowed, Score):
-    DisplayTargets(Targets)
-    DisplayNumbersAllowed(NumbersAllowed)
-    DisplayScore(Score)
-
-
-def DisplayScore(Score):
-    print("Current score: " + str(Score))
-    print()
-    print()
-
-
-def DisplayNumbersAllowed(NumbersAllowed):
-    print("Numbers available: ", end='')
-    for N in NumbersAllowed:
-        print(str(N) + "  ", end='')
-    print()
-    print()
-
-
-def DisplayTargets(Targets):
-    print("|", end='')
-    for T in Targets:
-        if T == -1:
-            print(" ", end='')
-        else:
-            print(T, end='')
-        print("|", end='')
-    print()
-    print()
-
-
-def ConvertToRPN(UserInput):
-    Position = 0
-    Precedence = {"+": 2, "-": 2, "*": 4, "/": 4}
-    Operators = []
-    Operand, Position = GetNumberFromUserInput(UserInput, Position)
-    UserInputInRPN = []
-    UserInputInRPN.append(str(Operand))
-    Operators.append(UserInput[Position - 1])
-    while Position < len(UserInput):
-        Operand, Position = GetNumberFromUserInput(UserInput, Position)
-        UserInputInRPN.append(str(Operand))
-        if Position < len(UserInput):
-            CurrentOperator = UserInput[Position - 1]
-            while len(Operators) > 0 and Precedence[Operators[-1]] > Precedence[CurrentOperator]:
-                UserInputInRPN.append(Operators[-1])
-                Operators.pop()
-            if len(Operators) > 0 and Precedence[Operators[-1]] == Precedence[CurrentOperator]:
-                UserInputInRPN.append(Operators[-1])
-                Operators.pop()
-            Operators.append(CurrentOperator)
-        else:
-            while len(Operators) > 0:
-                UserInputInRPN.append(Operators[-1])
-                Operators.pop()
-    return UserInputInRPN
-
-
-def EvaluateRPN(UserInputInRPN):
-    S = []
-    while len(UserInputInRPN) > 0:
-        while UserInputInRPN[0] not in ["+", "-", "*", "/"]:
-            S.append(UserInputInRPN[0])
-            UserInputInRPN.pop(0)
-        Num2 = float(S[-1])
-        S.pop()
-        Num1 = float(S[-1])
-        S.pop()
-        Result = 0.0
-        if UserInputInRPN[0] == "+":
-            Result = Num1 + Num2
-        elif UserInputInRPN[0] == "-":
-            Result = Num1 - Num2
-        elif UserInputInRPN[0] == "*":
-            Result = Num1 * Num2
-        elif UserInputInRPN[0] == "/":
-            Result = Num1 / Num2
-        UserInputInRPN.pop(0)
-        S.append(str(Result))
-    if float(S[0]) - math.floor(float(S[0])) == 0.0:
-        return math.floor(float(S[0]))
-    else:
-        return -1
-
-
-def GetNumberFromUserInput(UserInput, Position):
-    Number = ""
-    MoreDigits = True
-    while MoreDigits:
-        if not (re.search("[0-9]", str(UserInput[Position])) is None):
-            Number += UserInput[Position]
-        else:
-            MoreDigits = False
-        Position += 1
-        if Position == len(UserInput):
-            MoreDigits = False
-    if Number == "":
-        return -1, Position
-    else:
-        return int(Number), Position
-
-
-def CheckIfUserInputValid(UserInput):
-    if re.search("^([0-9]+[\\+\\-\\*\\/])+[0-9]+$", UserInput) is not None:
         return True
-    else:
+
+    def __MaxScoreReached(self):
+        for P in self.__Players:
+            if P.GetScore() >= self.__MaxScore:
+                return True
         return False
 
+class Tile():
+    def __init__(self, S, P):
+        self._Symbol = S
+        self._Points = P
 
-def GetTarget(MaxTarget):
-    return random.randint(1, MaxTarget)
+    def GetPoints(self):
+        return self._Points
 
+    def GetSymbol(self):
+        return self._Symbol
 
-def GetNumber(MaxNumber):
-    return random.randint(1, MaxNumber)
+class Player():
+    def __init__(self, N, S):
+        self._Name = N
+        self._Score = S
 
+    def GetScore(self):
+        return self._Score
 
-def CreateTargets(SizeOfTargets, MaxTarget):
-    Targets = []
-    for Count in range(1, 6):
-        Targets.append(-1)
-    for Count in range(1, SizeOfTargets - 4):
-        Targets.append(GetTarget(MaxTarget))
-    return Targets
+    def GetName(self):
+        return self._Name
 
+    def ChangeScore(self, Change):
+        self._Score += Change
 
-def FillNumbers(NumbersAllowed, TrainingGame, MaxNumber):
-    if TrainingGame:
-        return [2, 3, 2, 8, 512]
-    else:
-        while len(NumbersAllowed) < 5:
-            NumbersAllowed.append(GetNumber(MaxNumber))
-        return NumbersAllowed
+class Pile():
+    def __init__(self, M, B):
+        self._Tiles = []
+        self._Max = M
+        self._Bonus = B
 
+    def Add(self, T):
+        if len(self._Tiles) < self._Max:
+            self._Tiles.insert(0, T)
+
+    def GetSymbolOfTopTile(self):
+        return self._Tiles[0].GetSymbol()
+
+    def Remove(self):
+        Temp = self._Tiles[0]
+        self._Tiles.pop(0)
+        return Temp
+
+    def Empty(self):
+        if len(self._Tiles) == 0:
+            return True
+        else:
+            return False
+
+    def GetNumberOfTiles(self):
+        return len(self._Tiles)
 
 if __name__ == "__main__":
     Main()
